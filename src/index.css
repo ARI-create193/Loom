@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure proper scrolling */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+#root {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* Allow scrolling within components */
+.overflow-auto {
+  overflow: auto !important;
+}
+
+.overflow-y-auto {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure chat messages are scrollable */
+.max-h-full {
+  max-height: 100% !important;
+}
+
+/* Fix flex containers for proper scrolling */
+.flex-col {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Ensure auth forms are scrollable on mobile */
+.auth-container {
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
