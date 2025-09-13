@@ -13,6 +13,7 @@ import { sharedInvitationService, TeamInvitation, Team } from '../utils/sharedIn
 import { globalUserDatabase } from '../utils/globalUserDatabase';
 import GlobalUserList from './GlobalUserList';
 import UserSearchForInvitation from './UserSearchForInvitation';
+import AdminPanel from './AdminPanel';
 
 const TeamManagement: React.FC = () => {
   const { user } = useAuth();
@@ -253,6 +254,9 @@ const TeamManagement: React.FC = () => {
       </div>
 
       <div className="flex-1 p-6">
+        {/* Admin Panel for adding test users */}
+        <AdminPanel />
+        
         {/* Global Users List */}
         <GlobalUserList />
 

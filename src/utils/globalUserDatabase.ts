@@ -54,12 +54,56 @@ class GlobalUserDatabase {
     }
   }
 
-  // Initialize with empty database - no fake users
+  // Initialize with some test users for demonstration
   private initializeDefaultUsers(): void {
-    // Start with completely empty database
-    // Users will only be added when they actually register on the website
-    this.users = [];
-    this.saveUsers();
+    // Add some test users for demonstration purposes
+    const testUsers: GlobalUser[] = [
+      {
+        id: 'user-test-1',
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        avatar: 'J',
+        role: 'Developer',
+        joinDate: new Date().toISOString(),
+        bio: 'Full-stack developer',
+        skills: ['React', 'Node.js', 'TypeScript'],
+        isActive: true,
+        isOnline: false,
+        lastSeen: new Date().toISOString()
+      },
+      {
+        id: 'user-test-2',
+        name: 'Jane Smith',
+        email: 'jane.smith@example.com',
+        avatar: 'J',
+        role: 'Designer',
+        joinDate: new Date().toISOString(),
+        bio: 'UI/UX Designer',
+        skills: ['Figma', 'Photoshop', 'CSS'],
+        isActive: true,
+        isOnline: false,
+        lastSeen: new Date().toISOString()
+      },
+      {
+        id: 'user-test-3',
+        name: 'Mike Johnson',
+        email: 'mike.johnson@example.com',
+        avatar: 'M',
+        role: 'Developer',
+        joinDate: new Date().toISOString(),
+        bio: 'Backend developer',
+        skills: ['Python', 'Django', 'PostgreSQL'],
+        isActive: true,
+        isOnline: false,
+        lastSeen: new Date().toISOString()
+      }
+    ];
+
+    // Only add test users if no users exist
+    if (this.users.length === 0) {
+      this.users = testUsers;
+      this.saveUsers();
+    }
   }
 
   // Register a new user (when they sign up)
@@ -227,6 +271,47 @@ class GlobalUserDatabase {
       activeUsers: this.users.filter(u => u.isActive).length,
       onlineUsers: this.users.filter(u => u.isActive && u.isOnline).length,
       newUsersToday
+    };
+  }
+
+  // Add user manually (for testing/admin purposes)
+  addUserManually(userData: {
+    name: string;
+    email: string;
+    role?: string;
+    bio?: string;
+    skills?: string[];
+  }): { success: boolean; message: string; user?: GlobalUser } {
+    // Check if user already exists
+    if (this.users.find(u => u.email === userData.email)) {
+      return {
+        success: false,
+        message: 'User with this email already exists'
+      };
+    }
+
+    // Create new user
+    const newUser: GlobalUser = {
+      id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: userData.name,
+      email: userData.email,
+      avatar: userData.name.charAt(0).toUpperCase(),
+      role: userData.role || 'Developer',
+      joinDate: new Date().toISOString(),
+      bio: userData.bio || '',
+      skills: userData.skills || [],
+      isActive: true,
+      isOnline: false,
+      lastSeen: new Date().toISOString()
+    };
+
+    this.users.push(newUser);
+    this.saveUsers();
+
+    return {
+      success: true,
+      message: 'User added successfully',
+      user: newUser
     };
   }
 

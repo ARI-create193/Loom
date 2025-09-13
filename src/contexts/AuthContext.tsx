@@ -57,6 +57,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const savedUser = localStorage.getItem('user');
       const sessionData = localStorage.getItem('session');
       
+      // Ensure current user is in global database if they exist
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        const globalUser = globalUserDatabase.getUserByEmail(userData.email);
+        if (!globalUser) {
+          // Add current user to global database if not present
+          const userFromStorage = userStorage.getUserByEmail(userData.email);
+          if (userFromStorage) {
+            globalUserDatabase.syncExistingUsers([userFromStorage]);
+          }
+        }
+      }
+      
       if (savedUser && sessionData) {
         const session = JSON.parse(sessionData);
         const now = new Date().getTime();
@@ -113,7 +126,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { passwordHash, ...userData } = authResult.user;
         const user: User = userData;
         
-        // Update user online status in global database
+        // Ensure user is in global database and update online status
+        const globalUser = globalUserDatabase.getUserByEmail(user.email);
+        if (!globalUser) {
+          // Add user to global database if not present
+          const userFromStorage = userStorage.getUserByEmail(user.email);
+          if (userFromStorage) {
+            globalUserDatabase.syncExistingUsers([userFromStorage]);
+          }
+        }
         globalUserDatabase.updateUserOnlineStatus(user.email, true);
         
         setUser(user);
