@@ -141,6 +141,33 @@ class SharedInvitationService {
     };
   }
 
+  // Validate if user exists before sending invitation
+  validateUserForInvitation(email: string): { success: boolean; message: string; userInfo?: { name: string; email: string; avatar: string } } {
+    // Import globalUserDatabase to check if user exists
+    const { globalUserDatabase } = require('./globalUserDatabase');
+    
+    if (!globalUserDatabase.checkUserExists(email)) {
+      return {
+        success: false,
+        message: 'User not found. Please make sure the user has signed up on the website.'
+      };
+    }
+
+    const userInfo = globalUserDatabase.getUserForInvitation(email);
+    if (!userInfo) {
+      return {
+        success: false,
+        message: 'User not found. Please make sure the user has signed up on the website.'
+      };
+    }
+
+    return {
+      success: true,
+      message: 'User found',
+      userInfo
+    };
+  }
+
   // Send team invitation
   sendInvitation(invitationData: {
     teamId: string;
@@ -150,6 +177,15 @@ class SharedInvitationService {
     inviteeEmail: string;
     message?: string;
   }): { success: boolean; message: string; invitation?: TeamInvitation } {
+    // First validate that the user exists
+    const userValidation = this.validateUserForInvitation(invitationData.inviteeEmail);
+    if (!userValidation.success) {
+      return {
+        success: false,
+        message: userValidation.message
+      };
+    }
+
     // Find the team
     const team = this.teams.find(t => t.id === invitationData.teamId);
     if (!team) {

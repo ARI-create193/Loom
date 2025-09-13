@@ -125,21 +125,41 @@ class GlobalUserDatabase {
     this.saveUsers();
   }
 
-  // Search users by name or email
-  searchUsers(query: string): GlobalUser[] {
+  // Search users by name or email (for invitations only)
+  // Users can only search for other users to send invitations, not browse all users
+  searchUsersForInvitation(query: string, currentUserEmail: string): GlobalUser[] {
     if (!query || query.length < 2) {
       return [];
     }
 
     const searchTerm = query.toLowerCase();
     return this.users.filter(user => 
-      user.isActive && (
+      user.isActive && 
+      user.email !== currentUserEmail && // Don't show current user
+      (
         user.name.toLowerCase().includes(searchTerm) ||
         user.email.toLowerCase().includes(searchTerm) ||
         user.role.toLowerCase().includes(searchTerm) ||
         (user.skills && user.skills.some(skill => skill.toLowerCase().includes(searchTerm)))
       )
-    );
+    ).slice(0, 10); // Limit results to 10 for privacy
+  }
+
+  // Check if a user exists by email (for invitation validation)
+  checkUserExists(email: string): boolean {
+    return this.users.some(user => user.email === email && user.isActive);
+  }
+
+  // Get user info for invitation (minimal data)
+  getUserForInvitation(email: string): { name: string; email: string; avatar: string } | null {
+    const user = this.users.find(u => u.email === email && u.isActive);
+    if (!user) return null;
+    
+    return {
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar
+    };
   }
 
   // Get user by email
@@ -152,14 +172,10 @@ class GlobalUserDatabase {
     return this.users.find(u => u.id === id) || null;
   }
 
-  // Get all active users
-  getAllActiveUsers(): GlobalUser[] {
-    return this.users.filter(u => u.isActive);
-  }
 
-  // Get online users
-  getOnlineUsers(): GlobalUser[] {
-    return this.users.filter(u => u.isActive && u.isOnline);
+  // Get online users count (privacy-focused - only returns count, not user data)
+  getOnlineUsersCount(): number {
+    return this.users.filter(u => u.isActive && u.isOnline).length;
   }
 
   // Update user online status
@@ -191,27 +207,6 @@ class GlobalUserDatabase {
     };
   }
 
-  // Get user suggestions (users you might know)
-  getUserSuggestions(currentUserEmail: string, limit: number = 5): GlobalUser[] {
-    const currentUser = this.getUserByEmail(currentUserEmail);
-    if (!currentUser) return [];
-
-    // Get users with similar skills or roles
-    const suggestions = this.users.filter(user => 
-      user.email !== currentUserEmail && 
-      user.isActive &&
-      (
-        user.role === currentUser.role ||
-        (user.skills && currentUser.skills && 
-         user.skills.some(skill => currentUser.skills!.includes(skill)))
-      )
-    );
-
-    // Sort by join date (newer users first) and limit results
-    return suggestions
-      .sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime())
-      .slice(0, limit);
-  }
 
   // Get user statistics
   getUserStats(): {

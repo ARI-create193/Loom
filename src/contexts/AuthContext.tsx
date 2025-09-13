@@ -150,8 +150,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const registerResult = userStorage.registerUser({ name, email, password });
       
       if (registerResult.success && registerResult.user) {
-        // Also register in global database
-        globalUserDatabase.registerUser({ name, email, password });
+        // Also register in global database for invitation system
+        const globalResult = globalUserDatabase.registerUser({ name, email, password });
+        
+        if (!globalResult.success) {
+          console.warn('Failed to register user in global database:', globalResult.message);
+        }
         
         // Convert StoredUser to User interface (remove passwordHash)
         const { passwordHash, ...userData } = registerResult.user;

@@ -12,6 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { sharedInvitationService, TeamInvitation, Team } from '../utils/sharedInvitationService';
 import { globalUserDatabase } from '../utils/globalUserDatabase';
 import GlobalUserList from './GlobalUserList';
+import UserSearchForInvitation from './UserSearchForInvitation';
 
 const TeamManagement: React.FC = () => {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ const TeamManagement: React.FC = () => {
     inviteeEmail: '',
     message: ''
   });
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<{ name: string; email: string; avatar: string } | null>(null);
   
   // State for creating team
   const [teamData, setTeamData] = useState({
@@ -86,15 +87,9 @@ const TeamManagement: React.FC = () => {
     }
   };
 
-  const searchUsers = (query: string) => {
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    
-    // Search in the global user database
-    const searchResults = globalUserDatabase.searchUsers(query);
-    setSearchResults(searchResults);
+  const handleUserSelect = (user: { name: string; email: string; avatar: string }) => {
+    setSelectedUser(user);
+    setInvitationData({ ...invitationData, inviteeEmail: user.email });
   };
 
   const handleCreateTeam = () => {
@@ -133,19 +128,12 @@ const TeamManagement: React.FC = () => {
 
   const handleSendInvitation = () => {
     if (!invitationData.inviteeEmail.trim()) {
-      setError('Please enter an email address');
+      setError('Please select a user to invite');
       return;
     }
 
     if (!currentTeam || !user) {
       setError('No team selected or user not authenticated');
-      return;
-    }
-
-    // Check if user exists in the global database
-    const targetUser = globalUserDatabase.getUserByEmail(invitationData.inviteeEmail);
-    if (!targetUser) {
-      setError('User not found on the website. Please ask them to register first.');
       return;
     }
 
@@ -161,6 +149,7 @@ const TeamManagement: React.FC = () => {
     if (result.success) {
       setSuccess('Invitation sent successfully!');
       setInvitationData({ inviteeEmail: '', message: '' });
+      setSelectedUser(null);
       setIsSendingInvitation(false);
       loadInvitations();
       setTimeout(() => setSuccess(''), 3000);
@@ -333,66 +322,33 @@ const TeamManagement: React.FC = () => {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    value={invitationData.inviteeEmail}
-                    onChange={(e) => {
-                      setInvitationData({ ...invitationData, inviteeEmail: e.target.value });
-                      searchUsers(e.target.value);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter email address"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Search User</label>
+                  <UserSearchForInvitation
+                    onUserSelect={handleUserSelect}
+                    placeholder="Search users by name or email..."
                   />
                   
-                  {/* Search Results */}
-                  {searchResults.length > 0 && (
-                    <div className="mt-2 border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
-                      {searchResults.map((user) => (
-                        <div
-                          key={user.id}
-                          className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                          onClick={() => {
-                            setInvitationData({ ...invitationData, inviteeEmail: user.email });
-                            setSearchResults([]);
-                          }}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="relative">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-sm font-medium">{user.avatar}</span>
-                              </div>
-                              {user.isOnline && (
-                                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2">
-                                <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  user.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                                }`}>
-                                  {user.isOnline ? 'Online' : 'Offline'}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500">{user.email}</p>
-                              <p className="text-xs text-gray-600">{user.role}</p>
-                              {user.skills && user.skills.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {user.skills.slice(0, 3).map((skill: string, index: number) => (
-                                    <span key={index} className="px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                                      {skill}
-                                    </span>
-                                  ))}
-                                  {user.skills.length > 3 && (
-                                    <span className="text-xs text-gray-500">+{user.skills.length - 3} more</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                  {/* Selected User Display */}
+                  {selectedUser && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                          {selectedUser.avatar}
                         </div>
-                      ))}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{selectedUser.name}</div>
+                          <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(null);
+                            setInvitationData({ ...invitationData, inviteeEmail: '' });
+                          }}
+                          className="ml-auto p-1 hover:bg-blue-100 rounded"
+                        >
+                          <X className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -414,7 +370,7 @@ const TeamManagement: React.FC = () => {
                   onClick={() => {
                     setIsSendingInvitation(false);
                     setInvitationData({ inviteeEmail: '', message: '' });
-                    setSearchResults([]);
+                    setSelectedUser(null);
                   }}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
@@ -422,7 +378,8 @@ const TeamManagement: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSendInvitation}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  disabled={!selectedUser}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   Send Invitation
                 </button>
