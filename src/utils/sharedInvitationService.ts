@@ -1,5 +1,6 @@
 // Simulated shared invitation service that works across all browser instances
 // In a real app, this would be a backend API
+import { globalUserDatabase } from './globalUserDatabase';
 
 export interface TeamInvitation {
   id: string;
@@ -143,9 +144,6 @@ class SharedInvitationService {
 
   // Validate if user exists before sending invitation
   validateUserForInvitation(email: string): { success: boolean; message: string; userInfo?: { name: string; email: string; avatar: string } } {
-    // Import globalUserDatabase to check if user exists
-    const { globalUserDatabase } = require('./globalUserDatabase');
-    
     if (!globalUserDatabase.checkUserExists(email)) {
       return {
         success: false,
